@@ -1,0 +1,124 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+typedef struct Node {
+    char *name;
+    struct Node *left;
+    struct Node *right;
+} Node;
+
+Node *create_node(const char *name) {
+    Node *n = (Node*)malloc(sizeof(Node));
+    n->name = strdup(name);
+    n->left = n->right = NULL;
+    return n;
+}
+
+void free_tree(Node *root) {
+    if (!root) return;
+    free_tree(root->left);
+    free_tree(root->right);
+    free(root->name);
+    free(root);
+}
+
+void strip_newline(char *s) {
+    size_t len = strlen(s);
+    if (len == 0) return;
+    if (s[len-1] == '\n') s[len-1] = '\0';
+}
+
+void read_line(char *buf, size_t size) {
+    if (fgets(buf, (int)size, stdin) == NULL) {
+        buf[0] = '\0';
+        return;
+    }
+    strip_newline(buf);
+}
+
+Node *build_sample_tree(void) {
+    Node *entrada = create_node("Entrada");
+    Node *sala = create_node("Sala de Estar");
+    Node *cozinha = create_node("Cozinha");
+    Node *biblioteca = create_node("Biblioteca");
+    Node *jardim = create_node("Jardim");
+    Node *sotao = create_node("Sotão");
+    Node *quarto = create_node("Quarto Principal");
+
+    entrada->left = sala;
+    entrada->right = cozinha;
+
+    sala->left = biblioteca;
+    sala->right = jardim;
+
+    cozinha->left = sotao;
+    cozinha->right = quarto;
+
+    return entrada;
+}
+
+Node *build_manual_subtree(void) {
+    char buf[128];
+    printf("Digite o nome do cômodo (ou ENTER para nenhum): ");
+    read_line(buf, sizeof(buf));
+    if (strlen(buf) == 0) return NULL;
+
+    Node *root = create_node(buf);
+
+    printf("Criar cômodo à esquerda de %s? (s/n): ", root->name);
+    read_line(buf, sizeof(buf));
+    if (buf[0] == 's' || buf[0] == 'S') root->left = build_manual_subtree();
+
+    printf("Criar cômodo à direita de %s? (s/n): ", root->name);
+    read_line(buf, sizeof(buf));
+    if (buf[0] == 's' || buf[0] == 'S') root->right = build_manual_subtree();
+
+    return root;
+}
+
+void explore(Node *root) {
+    if (!root) return;
+
+    Node *cur = root;
+    char buf[8];
+
+    while (cur) {
+        printf("Você está em: %s\n", cur->name);
+
+        if (!cur->left && !cur->right) {
+            printf("Fim do caminho.\n");
+            break;
+        }
+
+        printf("Escolha: [l] esquerda [r] direita [q] sair\n> ");
+        read_line(buf, sizeof(buf));
+
+        if (buf[0] == 'q' || buf[0] == 'Q') break;
+        else if (buf[0] == 'l' || buf[0] == 'L') {
+            if (cur->left) cur = cur->left;
+            else printf("Sem caminho à esquerda.\n");
+        } else if (buf[0] == 'r' || buf[0] == 'R') {
+            if (cur->right) cur = cur->right;
+            else printf("Sem caminho à direita.\n");
+        } else {
+            printf("Opção inválida.\n");
+        }
+    }
+}
+
+int main(void) {
+    char buf[8];
+    Node *root = NULL;
+
+    printf("Construir manualmente? (s/n): ");
+    read_line(buf, sizeof(buf));
+
+    if (buf[0] == 's' || buf[0] == 'S') root = build_manual_subtree();
+    else root = build_sample_tree();
+
+    explore(root);
+    free_tree(root);
+    return 0;
+}
